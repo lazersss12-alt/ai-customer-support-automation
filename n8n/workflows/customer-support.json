@@ -11,11 +11,12 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        200,
-        500
+        208,
+        512
       ],
       "name": "Webhook",
-      "id": "b2c3d4e5-0001-4000-8000-000000000001"
+      "id": "b2c3d4e5-0001-4000-8000-000000000001",
+      "webhookId": "136aae91-318f-4006-8f00-c823c9c09bc0"
     },
     {
       "parameters": {
@@ -53,8 +54,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        420,
-        500
+        432,
+        512
       ],
       "name": "Validate Message",
       "id": "b2c3d4e5-0002-4000-8000-000000000002"
@@ -70,7 +71,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        660,
+        672,
         320
       ],
       "name": "Respond Validation Error",
@@ -103,7 +104,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        660,
+        672,
         560
       ],
       "name": "Has Conversation ID",
@@ -111,7 +112,6 @@
     },
     {
       "parameters": {
-        "operation": "create",
         "tableId": "conversations",
         "fieldsUi": {
           "fieldValues": [
@@ -130,7 +130,7 @@
       "typeVersion": 1,
       "position": [
         880,
-        680
+        688
       ],
       "name": "Create Conversation",
       "id": "b2c3d4e5-0005-4000-8000-000000000005",
@@ -143,7 +143,6 @@
     },
     {
       "parameters": {
-        "mode": "manual",
         "assignments": {
           "assignments": [
             {
@@ -177,15 +176,14 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1100,
-        680
+        1104,
+        688
       ],
       "name": "Use New Conversation ID",
       "id": "b2c3d4e5-0006-4000-8000-000000000006"
     },
     {
       "parameters": {
-        "mode": "manual",
         "assignments": {
           "assignments": [
             {
@@ -220,14 +218,13 @@
       "typeVersion": 3.4,
       "position": [
         880,
-        440
+        448
       ],
       "name": "Use Existing Conversation ID",
       "id": "b2c3d4e5-0007-4000-8000-000000000007"
     },
     {
       "parameters": {
-        "operation": "create",
         "tableId": "messages",
         "fieldsUi": {
           "fieldValues": [
@@ -249,7 +246,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1320,
+        1328,
         560
       ],
       "name": "Insert Customer Message",
@@ -271,7 +268,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1540,
+        1552,
         560
       ],
       "name": "Get Knowledge Base",
@@ -288,10 +285,8 @@
       "parameters": {
         "operation": "getAll",
         "tableId": "messages",
-        "returnAll": false,
         "limit": 6,
         "orderBy": "created_at.desc",
-        "filterType": "manual",
         "matchType": "allFilters",
         "filters": {
           "conditions": [
@@ -321,14 +316,12 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "language": "javaScript",
         "jsCode": "const kbItems = $('Get Knowledge Base').all().map(i => i.json);\nconst historyItems = $('Get Recent History').all().map(i => i.json).reverse();\nconst conversationId = $('Insert Customer Message').first().json.conversation_id;\nconst customerMessage = $('Insert Customer Message').first().json.content;\n\nconst knowledgeBaseText = kbItems\n  .map(row => `[${row.category}] Q: ${row.question}\\nA: ${row.answer}`)\n  .join('\\n\\n');\n\nconst historyText = historyItems\n  .map(row => `${row.role === 'customer' ? 'Customer' : 'Assistant'}: ${row.content}`)\n  .join('\\n');\n\nreturn [{\n  json: {\n    conversation_id: conversationId,\n    customer_message: customerMessage,\n    knowledge_base_text: knowledgeBaseText,\n    history_text: historyText || '(no earlier messages in this conversation)',\n  },\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1980,
+        1984,
         560
       ],
       "name": "Build Prompt Context",
@@ -343,11 +336,15 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.6,
       "position": [
-        2200,
+        2208,
         560
       ],
       "name": "AI Support Response",
-      "id": "b2c3d4e5-0012-4000-8000-000000000012"
+      "id": "b2c3d4e5-0012-4000-8000-000000000012",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -358,7 +355,7 @@
       "typeVersion": 1,
       "position": [
         2160,
-        780
+        784
       ],
       "name": "OpenRouter Chat Model",
       "id": "b2c3d4e5-0013-4000-8000-000000000013",
@@ -377,15 +374,14 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        2380,
-        780
+        2384,
+        784
       ],
       "name": "Structured Output Parser",
       "id": "b2c3d4e5-0014-4000-8000-000000000014"
     },
     {
       "parameters": {
-        "operation": "create",
         "tableId": "messages",
         "fieldsUi": {
           "fieldValues": [
@@ -423,7 +419,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        2420,
+        2432,
         560
       ],
       "name": "Insert AI Message",
@@ -439,7 +435,6 @@
       "parameters": {
         "operation": "update",
         "tableId": "conversations",
-        "filterType": "manual",
         "matchType": "allFilters",
         "filters": {
           "conditions": [
@@ -510,7 +505,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2860,
+        2864,
         560
       ],
       "name": "Escalation Check",
@@ -518,7 +513,6 @@
     },
     {
       "parameters": {
-        "operation": "create",
         "tableId": "escalations",
         "fieldsUi": {
           "fieldValues": [
@@ -544,8 +538,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        3080,
-        660
+        3088,
+        672
       ],
       "name": "Insert Escalation",
       "id": "b2c3d4e5-0018-4000-8000-000000000018",
@@ -565,11 +559,37 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        3300,
+        3312,
         560
       ],
       "name": "Respond Success",
       "id": "b2c3d4e5-0019-4000-8000-000000000019"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5449aedc-38de-4a8c-8b99-9b7449da6218",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return [{\n  json: {\n    output: {\n      answer: \"I'm sorry, I wasn't able to generate a reliable answer to that question right now. I've flagged this conversation for a support representative to follow up.\",\n      status: \"needs_human\",\n      confidence: 0,\n      needs_human: true,\n      reason: \"The AI assistant failed to produce a valid response (model returned an empty or invalid output after retrying) and needs human review.\",\n    },\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        780
+      ],
+      "name": "AI Response Fallback",
+      "id": "b2c3d4e5-0020-4000-8000-000000000020"
     }
   ],
   "connections": {
@@ -727,6 +747,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "AI Response Fallback",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -780,9 +807,24 @@
           }
         ]
       ]
+    },
+    "AI Response Fallback": {
+      "main": [
+        [
+          {
+            "node": "Insert AI Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   }
 }
