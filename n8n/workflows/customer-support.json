@@ -1,0 +1,788 @@
+{
+  "name": "AI Customer Support Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "customer-support",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        500
+      ],
+      "name": "Webhook",
+      "id": "b2c3d4e5-0001-4000-8000-000000000001"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "val-cond-1",
+              "leftValue": "={{ $json.body && $json.body.message ? $json.body.message.trim() : '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "val-cond-2",
+              "leftValue": "={{ ($json.body && $json.body.message ? $json.body.message : '').length }}",
+              "rightValue": 2000,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        420,
+        500
+      ],
+      "name": "Validate Message",
+      "id": "b2c3d4e5-0002-4000-8000-000000000002"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Message is required and must be 2000 characters or fewer.\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        320
+      ],
+      "name": "Respond Validation Error",
+      "id": "b2c3d4e5-0003-4000-8000-000000000003"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "conv-cond-1",
+              "leftValue": "={{ $json.body.conversation_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        560
+      ],
+      "name": "Has Conversation ID",
+      "id": "b2c3d4e5-0004-4000-8000-000000000004"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "tableId": "conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "customer_name",
+              "fieldValue": "={{ $json.body.customer_name || null }}"
+            },
+            {
+              "fieldId": "customer_email",
+              "fieldValue": "={{ $json.body.customer_email || null }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        880,
+        680
+      ],
+      "name": "Create Conversation",
+      "id": "b2c3d4e5-0005-4000-8000-000000000005",
+      "credentials": {
+        "supabaseApi": {
+          "id": "H8nPBdVakMzSFB1j",
+          "name": "Supabase (customer support)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "new-1",
+              "name": "conversation_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "new-2",
+              "name": "customer_name",
+              "value": "={{ $json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "new-3",
+              "name": "customer_email",
+              "value": "={{ $json.customer_email }}",
+              "type": "string"
+            },
+            {
+              "id": "new-4",
+              "name": "message",
+              "value": "={{ $('Webhook').item.json.body.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1100,
+        680
+      ],
+      "name": "Use New Conversation ID",
+      "id": "b2c3d4e5-0006-4000-8000-000000000006"
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ex-1",
+              "name": "conversation_id",
+              "value": "={{ $json.body.conversation_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ex-2",
+              "name": "customer_name",
+              "value": "={{ $json.body.customer_name || null }}",
+              "type": "string"
+            },
+            {
+              "id": "ex-3",
+              "name": "customer_email",
+              "value": "={{ $json.body.customer_email || null }}",
+              "type": "string"
+            },
+            {
+              "id": "ex-4",
+              "name": "message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        440
+      ],
+      "name": "Use Existing Conversation ID",
+      "id": "b2c3d4e5-0007-4000-8000-000000000007"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "tableId": "messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $json.conversation_id }}"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "customer"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $json.message }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        560
+      ],
+      "name": "Insert Customer Message",
+      "id": "b2c3d4e5-0008-4000-8000-000000000008",
+      "credentials": {
+        "supabaseApi": {
+          "id": "H8nPBdVakMzSFB1j",
+          "name": "Supabase (customer support)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "knowledge_base",
+        "returnAll": true,
+        "orderBy": "category"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        560
+      ],
+      "name": "Get Knowledge Base",
+      "executeOnce": true,
+      "id": "b2c3d4e5-0009-4000-8000-000000000009",
+      "credentials": {
+        "supabaseApi": {
+          "id": "H8nPBdVakMzSFB1j",
+          "name": "Supabase (customer support)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "messages",
+        "returnAll": false,
+        "limit": 6,
+        "orderBy": "created_at.desc",
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "conversation_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Insert Customer Message').item.json.conversation_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        560
+      ],
+      "name": "Get Recent History",
+      "executeOnce": true,
+      "id": "b2c3d4e5-0010-4000-8000-000000000010",
+      "credentials": {
+        "supabaseApi": {
+          "id": "H8nPBdVakMzSFB1j",
+          "name": "Supabase (customer support)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const kbItems = $('Get Knowledge Base').all().map(i => i.json);\nconst historyItems = $('Get Recent History').all().map(i => i.json).reverse();\nconst conversationId = $('Insert Customer Message').first().json.conversation_id;\nconst customerMessage = $('Insert Customer Message').first().json.content;\n\nconst knowledgeBaseText = kbItems\n  .map(row => `[${row.category}] Q: ${row.question}\\nA: ${row.answer}`)\n  .join('\\n\\n');\n\nconst historyText = historyItems\n  .map(row => `${row.role === 'customer' ? 'Customer' : 'Assistant'}: ${row.content}`)\n  .join('\\n');\n\nreturn [{\n  json: {\n    conversation_id: conversationId,\n    customer_message: customerMessage,\n    knowledge_base_text: knowledgeBaseText,\n    history_text: historyText || '(no earlier messages in this conversation)',\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        560
+      ],
+      "name": "Build Prompt Context",
+      "id": "b2c3d4e5-0011-4000-8000-000000000011"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a customer support assistant for Northlane Goods, a FICTIONAL e-commerce company used for a portfolio demo. Never treat anything here as a real company or real customer data.\n\nAnswer ONLY using the knowledge base below. Do not invent policies, prices, timelines, or promises that are not stated in it.\n\nKnowledge base:\n{{ $json.knowledge_base_text }}\n\nRecent conversation history:\n{{ $json.history_text }}\n\nCustomer's new message:\n{{ $json.customer_message }}\n\nDecide how to respond:\n- If the knowledge base clearly answers the question, set status to \"resolved\", needs_human to false, and give a confident, specific answer with confidence >= 0.7.\n- If the customer is asking for an exception, a complaint resolution, or anything requiring human judgment (e.g. a refund outside policy, a complaint, a special accommodation), set status to \"needs_human\", needs_human to true, keep the answer to a brief acknowledgement that a representative will follow up, and explain why in reason.\n- If the knowledge base does not contain enough information to answer confidently, set status to \"unknown\", needs_human to false, confidence below 0.5, and say so honestly instead of guessing.\n\nAlways return a reason (null is fine when status is \"resolved\").",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        2200,
+        560
+      ],
+      "name": "AI Support Response",
+      "id": "b2c3d4e5-0012-4000-8000-000000000012"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        780
+      ],
+      "name": "OpenRouter Chat Model",
+      "id": "b2c3d4e5-0013-4000-8000-000000000013",
+      "credentials": {
+        "openRouterApi": {
+          "id": "UNYCbMfrqR2jHeEv",
+          "name": "OpenRouter (free tier)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"answer\": { \"type\": \"string\" },\n    \"status\": { \"type\": \"string\", \"enum\": [\"resolved\", \"needs_human\", \"unknown\"] },\n    \"confidence\": { \"type\": \"number\" },\n    \"needs_human\": { \"type\": \"boolean\" },\n    \"reason\": { \"type\": [\"string\", \"null\"] }\n  },\n  \"required\": [\"answer\", \"status\", \"confidence\", \"needs_human\", \"reason\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        2380,
+        780
+      ],
+      "name": "Structured Output Parser",
+      "id": "b2c3d4e5-0014-4000-8000-000000000014"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "tableId": "messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $('Build Prompt Context').item.json.conversation_id }}"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "ai"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $json.output.answer }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.output.status }}"
+            },
+            {
+              "fieldId": "confidence",
+              "fieldValue": "={{ $json.output.confidence }}"
+            },
+            {
+              "fieldId": "needs_human",
+              "fieldValue": "={{ $json.output.needs_human }}"
+            },
+            {
+              "fieldId": "reason",
+              "fieldValue": "={{ $json.output.reason }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2420,
+        560
+      ],
+      "name": "Insert AI Message",
+      "id": "b2c3d4e5-0015-4000-8000-000000000015",
+      "credentials": {
+        "supabaseApi": {
+          "id": "H8nPBdVakMzSFB1j",
+          "name": "Supabase (customer support)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "conversations",
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Build Prompt Context').item.json.conversation_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "latest_confidence",
+              "fieldValue": "={{ $json.confidence }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        560
+      ],
+      "name": "Update Conversation",
+      "id": "b2c3d4e5-0016-4000-8000-000000000016",
+      "credentials": {
+        "supabaseApi": {
+          "id": "H8nPBdVakMzSFB1j",
+          "name": "Supabase (customer support)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "esc-cond-1",
+              "leftValue": "={{ $('Insert AI Message').item.json.needs_human }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2860,
+        560
+      ],
+      "name": "Escalation Check",
+      "id": "b2c3d4e5-0017-4000-8000-000000000017"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "tableId": "escalations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $('Build Prompt Context').item.json.conversation_id }}"
+            },
+            {
+              "fieldId": "message_id",
+              "fieldValue": "={{ $('Insert AI Message').item.json.id }}"
+            },
+            {
+              "fieldId": "reason",
+              "fieldValue": "={{ $('Insert AI Message').item.json.reason }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "open"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3080,
+        660
+      ],
+      "name": "Insert Escalation",
+      "id": "b2c3d4e5-0018-4000-8000-000000000018",
+      "credentials": {
+        "supabaseApi": {
+          "id": "H8nPBdVakMzSFB1j",
+          "name": "Supabase (customer support)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { conversation_id: $('Build Prompt Context').item.json.conversation_id, answer: $('Insert AI Message').item.json.content, status: $('Insert AI Message').item.json.status, confidence: $('Insert AI Message').item.json.confidence, needs_human: $('Insert AI Message').item.json.needs_human, reason: $('Insert AI Message').item.json.reason } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3300,
+        560
+      ],
+      "name": "Respond Success",
+      "id": "b2c3d4e5-0019-4000-8000-000000000019"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Message": {
+      "main": [
+        [
+          {
+            "node": "Has Conversation ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Conversation ID": {
+      "main": [
+        [
+          {
+            "node": "Use Existing Conversation ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Conversation": {
+      "main": [
+        [
+          {
+            "node": "Use New Conversation ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use New Conversation ID": {
+      "main": [
+        [
+          {
+            "node": "Insert Customer Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Existing Conversation ID": {
+      "main": [
+        [
+          {
+            "node": "Insert Customer Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Customer Message": {
+      "main": [
+        [
+          {
+            "node": "Get Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "Get Recent History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recent History": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt Context": {
+      "main": [
+        [
+          {
+            "node": "AI Support Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Support Response",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Support Response",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Support Response": {
+      "main": [
+        [
+          {
+            "node": "Insert AI Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert AI Message": {
+      "main": [
+        [
+          {
+            "node": "Update Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Conversation": {
+      "main": [
+        [
+          {
+            "node": "Escalation Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalation Check": {
+      "main": [
+        [
+          {
+            "node": "Insert Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Escalation": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
